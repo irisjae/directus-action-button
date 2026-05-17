@@ -103,7 +103,7 @@ export default defineComponent({
                                   render(value, item),
                               ])
                           )
-                        : false;
+                        : null;
 
                     const result = await api.request({
                         method,
@@ -117,6 +117,13 @@ export default defineComponent({
                     } else if (props.result === "reload") {
                         router.go(0);
                     } else {
+			let dismissAction = () => {};
+
+                        if ('replace' in result.data) router.replace(result.data.replace);
+			else if ('push' in result.data) router.push(result.data.push);
+			else if ('go' in result.data) dismissAction = () => {router.go(+result.data.go);};
+			else if ('goto' in result.data) router.push(result.data.goto);
+			
                         store.add({
                             title: result.data.title || "Success",
                             text:
@@ -124,9 +131,8 @@ export default defineComponent({
                                 "Action was completed successfully",
                             type: "success",
                             dialog: true,
+			    dismissAction: dismissAction,
                         });
-
-                        if (result.data.goto) router.push(result.data.goto);
                     }
                 } catch (error) {
                     console.warn(error);
