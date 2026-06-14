@@ -146,14 +146,26 @@ export default defineComponent({
                         error.response?.data?.errors?.[0]?.message ||
                         error.message ||
                         undefined;
+                    
+		    const hintMatch = (typeof message === 'string') ?
+		        message.match(/\$message\$(.+)\$message\$/)
+		    : null;
 
-                    store.add({
-                        title: t(`errors.${code}`),
-                        text: message,
-                        type: "error",
-                        dialog: true,
-                        error,
-                    });
+                    if (hintMatch) {
+			store.add({
+			    text: hintMatch[1],
+			    type: "error",
+			    dialog: true,
+			});                    
+		    } else {
+			store.add({
+			    title: t(`errors.${code}`),
+			    text: message,
+			    type: "error",
+			    dialog: true,
+			    error,
+			});
+                    }
                 } finally {
                     isLoading.value = false;
                 }
