@@ -1,18 +1,3 @@
-<template>
-    <div>
-        <v-button
-            :loading="isLoading"
-            @click="click"
-            :class="buttonType"
-            :secondary="buttonType !== 'primary'"
-            :icon="!label"
-        >
-            <v-icon v-if="icon" left :name="icon" />
-            {{ label }}
-        </v-button>
-    </div>
-</template>
-
 <script>
 import { defineComponent, ref, inject, computed } from "vue";
 import { useRouter } from "vue-router";
@@ -28,6 +13,14 @@ export default defineComponent({
             default: null,
         },
         buttonType: {
+            type: String,
+            default: null,
+        },
+        confirm: {
+            type: Boolean,
+            default: false,
+        },
+        confirmText: {
             type: String,
             default: null,
         },
@@ -76,13 +69,12 @@ export default defineComponent({
         const router = useRouter();
         const api = useApi();
         const isLoading = ref(false);
+        const confirming = ref(false);
         const values = inject("values");
         const { t } = useI18n();
 
-        return {
-            isLoading,
-            label: computed(() => render(props.label, values.value)),
-            async click() {
+        const doAction = async () => {
+                confirming.value = false;
                 isLoading.value = true;
 
                 try {
@@ -117,13 +109,13 @@ export default defineComponent({
                     } else if (props.result === "reload") {
                         router.go(0);
                     } else {
-			let dismissAction = () => {};
+                        let dismissAction = () => {};
 
                         if ('replace' in result.data) router.replace(result.data.replace);
-			else if ('push' in result.data) router.push(result.data.push);
-			else if ('go' in result.data) dismissAction = () => {router.go(+result.data.go);};
-			else if ('goto' in result.data) router.push(result.data.goto);
-			
+                        else if ('push' in result.data) router.push(result.data.push);
+                        else if ('go' in result.data) dismissAction = () => {router.go(+result.data.go);};
+                        else if ('goto' in result.data) router.push(result.data.goto);
+                        
                         store.add({
                             title: result.data.title || "Success",
                             text:
@@ -131,7 +123,7 @@ export default defineComponent({
                                 "Action was completed successfully",
                             type: "success",
                             dialog: true,
-			    dismissAction: dismissAction,
+                            dismissAction: dismissAction,
                         });
                     }
                 } catch (error) {
@@ -147,27 +139,41 @@ export default defineComponent({
                         error.message ||
                         undefined;
                     
-		    const hintMatch = (typeof message === 'string') ?
-		        message.match(/\$message\$(.+)\$message\$/)
-		    : null;
+                    const hintMatch = (typeof message === 'string') ?
+                        message.match(/\$message\$(.+)\$message\$/)
+                    : null;
 
                     if (hintMatch) {
-			store.add({
-			    text: hintMatch[1],
-			    type: "error",
-			    dialog: true,
-			});                    
-		    } else {
-			store.add({
-			    title: t(`errors.${code}`),
-			    text: message,
-			    type: "error",
-			    dialog: true,
-			    error,
-			});
+                        store.add({
+                            text: hintMatch[1],
+                            type: "error",
+                            dialog: true,
+                        });                    
+                    } else {
+                        store.add({
+                            title: t(`errors.${code}`),
+                            text: message,
+                            type: "error",
+                            dialog: true,
+                            error,
+                        });
                     }
                 } finally {
                     isLoading.value = false;
+                }        
+        };
+
+        return {
+            t,
+            isLoading,
+            confirming,
+            doAction,
+            label: computed(() => render(props.label, values.value)),
+            click() {
+                if (props.confirm) {
+                    confirming.value = true;
+                } else {
+                    doAction();
                 }
             },
         };
@@ -182,6 +188,32 @@ export default defineComponent({
     },
 });
 </script>
+
+<template>
+    <div>
+        <v-button
+            :loading="isLoading"
+            @click="click"
+            :class="buttonType"
+            :secondary="buttonType !== 'primary'"
+            :icon="!label"
+        >
+            <v-icon v-if="icon" left :name="icon" />
+            {{ label }}
+        </v-button>
+        <v-dialog v-model="confirming" @esc="confirming = false" @apply="doAction">
+            <v-card>
+                <v-card-title>{{ confirmText || t('button_confirmation') }}</v-card-title>
+                <v-card-actions>
+                    <v-button secondary @click="doAction()">
+                        {{ t('continue_label') }}
+                    </v-button>
+                    <v-button @click="confirming = false">{{ t('cancel') }}</v-button>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+    </div>
+</template>
 
 <style scoped>
 .info {

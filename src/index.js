@@ -45,6 +45,28 @@ export default {
             },
         },
         {
+            field: "confirm",
+            name: "$t:require_confirmation",
+            type: "boolean",
+            meta: {
+                width: "half",
+                interface: "boolean",
+                default_value: false,
+            },
+            schema: {
+                default_value: false,
+            },
+        },
+        {
+            field: "confirmText",
+            type: "half",
+            name: "$t:confirmation_description",
+            meta: {
+                width: "half",
+                interface: "string",
+            },
+        },
+        {
             field: "label",
             type: "full",
             name: "$t:label",
