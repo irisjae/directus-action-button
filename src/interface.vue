@@ -114,6 +114,7 @@ export default defineComponent({
                         if ('replace' in result.data) router.replace(result.data.replace);
                         else if ('push' in result.data) router.push(result.data.push);
                         else if ('go' in result.data) dismissAction = () => {router.go(+result.data.go);};
+                        else if ('reload' in result.data) dismissAction = () => {window.location.reload();};
                         else if ('goto' in result.data) router.push(result.data.goto);
                         
                         store.add({
